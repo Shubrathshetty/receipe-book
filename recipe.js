@@ -21,10 +21,16 @@ createApp({
       id,
       activeStep: 0,
       checked: new Set(),
-      bookmarks: new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]"))
+      bookmarks: new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]")),
+      currentImageIndex: 0
     });
 
     const isBookmarked = computed(() => state.bookmarks.has(state.id));
+    const watchUrl = computed(() => {
+      if (!state.recipe) return "";
+      return `https://www.youtube.com/results?search_query=${encodeURIComponent((state.recipe.title || "recipe") + " recipe tutorial")}`;
+    });
+
     const progressWidth = computed(() => {
       if (!state.recipe) return "0%";
       return (((state.activeStep + 1) / state.recipe.steps.length) * 100) + "%";
@@ -88,6 +94,7 @@ createApp({
       ...toRefs(state),
       isBookmarked,
       progressWidth,
+      watchUrl,
       toggleBookmark,
       toggleCheck,
       nextStep,

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Recipe Book - Flip Through & Cook</title>
-  <link rel="icon" href="/favicon.ico">
+  <title>Recipe Book - Flip Through & Cook</title>
+  <link rel="icon" href="/favicon.ico?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,8 +24,11 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
+      --bg-gif: url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=60");
       font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 10% 20%, #ffe7c7 0%, #f6f0e6 30%, #e7ecf8 100%);
+      background:
+        linear-gradient(115deg, rgba(255,255,255,0.86), rgba(255,240,225,0.88)),
+        var(--bg-gif) center/cover fixed;
       color: var(--ink);
       min-height: 100vh;
       padding: 32px 18px 64px;
@@ -263,19 +266,26 @@
       border: none;
       border-radius: 12px;
       padding: 10px 14px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       flex: 1;
-      box-shadow: 0 12px 24px rgba(228,87,46,0.22);
-      transition: transform 180ms ease, box-shadow 180ms ease;
+      box-shadow:
+        0 10px 0 #c73e1d,
+        0 16px 24px rgba(228,87,46,0.28);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      transform: translateY(0);
     }
 
-    .button:hover { transform: translateY(-2px); box-shadow: 0 16px 28px rgba(228,87,46,0.28); }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 12px 0 #c73e1d, 0 18px 28px rgba(228,87,46,0.32); }
+    .button:active { transform: translateY(2px); box-shadow: 0 6px 0 #c73e1d, 0 12px 20px rgba(228,87,46,0.24); }
+
     .button.secondary {
-      background: #ffffff;
+      background: linear-gradient(135deg, #ffffff, #f3e9dc);
       color: var(--ink);
       border: 1px solid #e4d7c7;
-      box-shadow: none;
+      box-shadow:
+        0 8px 0 #d3c4b0,
+        0 14px 22px rgba(0,0,0,0.08);
     }
 
     .bookmark {
@@ -340,7 +350,7 @@
 </head>
 <body>
   <div id="app">
-    <h1>My Recipe Book</h1>
+    <h1>Recipe Book</h1>
     <p class="tagline">Flip through pages, search by craving, and jump into any recipe instantly.</p>
 
     <section class="toolbar">
