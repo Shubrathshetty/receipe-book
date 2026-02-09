@@ -45,7 +45,8 @@ createApp({
 
     const openRecipe = (id) => {
       localStorage.setItem("lastRecipe", id);
-      window.location.href = "recipe.html?recipe=" + encodeURIComponent(id);
+      const base = (import.meta && import.meta.env && import.meta.env.BASE_URL) ? import.meta.env.BASE_URL : "/";
+      window.location.href = `${base}recipe.html?recipe=${encodeURIComponent(id)}`;
     };
 
     const peek = (recipe) => { state.peekItem = recipe; };
