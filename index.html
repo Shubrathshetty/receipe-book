@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Recipe Book - Flip Through & Cook</title>
+  <link rel="icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script type="module" src="/index.js"></script>
   <style>
+    [v-cloak] { display: none; }
     :root {
       --primary: #e4572e;
       --secondary: #f2a541;
@@ -128,6 +130,60 @@
       box-shadow: var(--shadow);
       cursor: pointer;
       transition: box-shadow 160ms ease;
+    }
+
+    .saved-wrap {
+      max-width: 1180px;
+      margin: 0 auto 18px;
+    }
+    .saved-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 4px 10px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .saved-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(220px, 1fr);
+      gap: 14px;
+      overflow-x: auto;
+      padding: 6px 2px 8px;
+      scrollbar-width: thin;
+    }
+    .saved-card {
+      background: #fff;
+      border: 1px solid #e4d7c7;
+      border-radius: 14px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      min-height: 100%;
+    }
+    .saved-card h3 {
+      font-family: "Playfair Display", serif;
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .saved-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .saved-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .pill {
+      border: 1px solid #e4d7c7;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: #fff7ea;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .card::before {
@@ -306,6 +362,26 @@
       </div>
     </section>
 
+    <section class="saved-wrap" v-if="saved.length">
+      <div class="saved-header">
+        <span>Saved recipes</span>
+        <span>{{ saved.length }} saved</span>
+      </div>
+      <div class="saved-row">
+        <article v-for="r in saved" :key="r.id" class="saved-card">
+          <h3>{{ r.title }}</h3>
+          <p class="saved-meta">{{ r.time }} • {{ r.level }} • Serves {{ r.serves }}</p>
+          <div class="tags">
+            <span class="tag" v-for="t in r.tags.slice(0,2)" :key="t">{{ t }}</span>
+          </div>
+          <div class="saved-actions">
+            <button class="pill" @click="openRecipe(r.id)">Open</button>
+            <button class="pill" @click="toggleBookmark(r.id)">Remove</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="shelf">
       <article
         v-for="r in filtered"
@@ -313,7 +389,7 @@
         class="card"
         @click="openRecipe(r.id)"
       >
-        <img :src="r.image" :alt="r.title">
+        <img :src="r.image" :alt="r.title" loading="lazy" @error="imgError($event, r.title)">
         <div class="card-body">
           <h2>{{ r.title }}</h2>
           <p class="meta">{{ r.time }} • {{ r.level }} • Serves {{ r.serves }}</p>
@@ -362,66 +438,5 @@
       </template>
     </aside>
   </div>
-
-  <script src="data.js"></script>
-  <script>
-    const { createApp, reactive, computed, onMounted } = Vue;
-    createApp({
-      setup() {
-        const state = reactive({
-          recipes: window.RECIPES || [],
-          query: "",
-          activeTags: new Set(),
-          bookmarks: new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]")),
-          peekItem: null,
-          chips: ["Quick", "Veggie", "Comfort", "Sweet", "Weeknight"]
-        });
-
-        const filtered = computed(() => {
-          const text = state.query.trim().toLowerCase();
-          return state.recipes.filter(r => {
-            const matchesText =
-              r.title.toLowerCase().includes(text) ||
-              r.blurb.toLowerCase().includes(text) ||
-              r.tags.some(t => t.toLowerCase().includes(text)) ||
-              r.ingredients.some(i => i.toLowerCase().includes(text));
-            const matchesTag = state.activeTags.size === 0 || r.tags.some(t => state.activeTags.has(t.toLowerCase()));
-            return matchesText && matchesTag;
-          });
-        });
-
-        const saveBookmarks = () => {
-          localStorage.setItem("bookmarks", JSON.stringify([...state.bookmarks]));
-        };
-
-        const toggleTag = (tag) => {
-          if (state.activeTags.has(tag)) state.activeTags.delete(tag);
-          else state.activeTags.add(tag);
-        };
-
-        const tagClass = (t) => t === "veggie" ? "veggie" : t === "quick" ? "quick" : t === "sweet" ? "sweet" : "";
-
-        const openRecipe = (id) => {
-          localStorage.setItem("lastRecipe", id);
-          window.location.href = "recipe.html?recipe=" + encodeURIComponent(id);
-        };
-
-        const peek = (recipe) => { state.peekItem = recipe; };
-
-        const toggleBookmark = (id) => {
-          if (state.bookmarks.has(id)) state.bookmarks.delete(id);
-          else state.bookmarks.add(id);
-          saveBookmarks();
-        };
-
-        onMounted(() => {
-          const last = localStorage.getItem("lastRecipe");
-          if (!state.query && last) state.query = "";
-        });
-
-        return { ...Vue.toRefs(state), filtered, toggleTag, tagClass, openRecipe, peek, toggleBookmark };
-      }
-    }).mount("#app");
-  </script>
 </body>
 </html>

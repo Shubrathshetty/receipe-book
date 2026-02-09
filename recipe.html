@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Recipe Details</title>
+  <link rel="icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script type="module" src="recipe.js"></script>
   <style>
+    [v-cloak] { display: none; }
     :root {
       --primary: #e4572e;
       --secondary: #f2a541;
@@ -261,198 +263,81 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <a href="index.html">← Back to shelf</a>
-    <button id="bookmark">♡ Save</button>
-  </div>
-
-  <section class="hero">
-    <div class="image"><img id="hero-img" alt=""></div>
-    <div class="content">
-      <h1 id="title"></h1>
-      <p class="blurb" id="blurb"></p>
-      <div class="badges">
-        <span class="badge">⏱ <span id="time"></span></span>
-        <span class="badge">🎚 <span id="level"></span></span>
-        <span class="badge">🍽 <span id="serves"></span></span>
-      </div>
-      <div class="tags" id="tags"></div>
-      <div class="cta">
-        <button class="button primary" id="focus">Start cooking</button>
-        <button class="button secondary" id="speak">Read aloud</button>
-      </div>
+  <div id="app" v-cloak>
+    <div class="topbar">
+      <a href="index.html">← Back to shelf</a>
+      <button :class="{active: isBookmarked}" @click="toggleBookmark">♡ Favourites</button>
     </div>
-  </section>
 
-  <section class="page">
-    <div class="spine"></div>
-    <div class="panel">
-      <h2>Ingredients</h2>
-      <ul class="ingredients" id="ingredients"></ul>
-    </div>
-    <div>
+    <section class="hero" v-if="recipe">
+      <div class="image"><img :src="recipe.image" :alt="recipe.title" loading="lazy" @error="imgError($event, recipe.title)"></div>
+      <div class="content">
+        <h1>{{ recipe.title }}</h1>
+        <p class="blurb">{{ recipe.blurb }}</p>
+        <div class="badges">
+          <span class="badge">⏱ <span>{{ recipe.time }}</span></span>
+          <span class="badge">🎚 <span>{{ recipe.level }}</span></span>
+          <span class="badge">🍽 <span>Serves {{ recipe.serves }}</span></span>
+        </div>
+        <div class="tags">
+          <span class="tag" v-for="t in recipe.tags" :key="t">{{ t }}</span>
+        </div>
+        <div class="cta">
+          <button class="button primary" @click="startCooking">Start cooking</button>
+          <button class="button secondary" @click="readAll">Read aloud</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" v-if="recipe">
+      <div class="spine"></div>
       <div class="panel">
-        <h2>Steps</h2>
-        <div class="steps" id="steps"></div>
-        <div class="progress"><span id="progress-bar"></span></div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-          <button class="button secondary" id="prev-step">Previous</button>
-          <button class="button primary" id="next-step">Next step</button>
+        <h2>Ingredients</h2>
+        <ul class="ingredients">
+          <li
+            v-for="(ing, idx) in recipe.ingredients"
+            :key="idx"
+            class="ing"
+            :class="{completed: checked.has(idx)}"
+          >
+            <input type="checkbox" :checked="checked.has(idx)" @change="toggleCheck(idx)">
+            <span>{{ ing }}</span>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <div class="panel">
+          <h2>Steps</h2>
+          <div class="steps">
+            <div
+              v-for="(step, idx) in recipe.steps"
+              :key="idx"
+              class="step"
+              :class="{active: idx === activeStep}"
+            >
+              <header>
+                <strong>Step {{ idx + 1 }}</strong>
+                <button @click="speakStep(idx)">🔊</button>
+              </header>
+              <p>{{ step }}</p>
+            </div>
+          </div>
+          <div class="progress"><span :style="{width: progressWidth}"></span></div>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="button secondary" @click="prevStep">Previous</button>
+            <button class="button primary" @click="nextStep">Next step</button>
+          </div>
+        </div>
+        <div class="panel" v-if="recipe.video">
+          <h2>Watch it</h2>
+          <div class="video">
+            <iframe :src="recipe.video + '?rel=0'" width="100%" height="100%" title="YouTube video player" allowfullscreen></iframe>
+          </div>
         </div>
       </div>
-      <div class="panel" id="video-panel" hidden>
-        <h2>Watch it</h2>
-        <div class="video">
-          <iframe id="video" width="100%" height="100%" src="" title="YouTube video player" allowfullscreen></iframe>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <script src="data.js"></script>
-  <script>
-    const recipeList = window.RECIPES || [];
-    const recipeMap = Object.fromEntries(recipeList.map(r => [r.id, r]));
-    const params = new URLSearchParams(window.location.search);
-    const fromQuery = params.get("recipe");
-    const fallback = localStorage.getItem("lastRecipe");
-    const id = recipeMap[fromQuery] ? fromQuery : (recipeMap[fallback] ? fallback : recipeList[0]?.id);
-    const recipe = recipeMap[id];
-    if (recipe && id) {
-      localStorage.setItem("lastRecipe", id);
-    } else {
-      document.body.innerHTML = "<p style='padding:2rem;font-family:sans-serif;'>Recipe not found. Go back to the shelf.</p>";
-      throw new Error("Recipe not found");
-    }
-
-    const heroImg = document.getElementById("hero-img");
-    const titleEl = document.getElementById("title");
-    const blurbEl = document.getElementById("blurb");
-    const timeEl = document.getElementById("time");
-    const levelEl = document.getElementById("level");
-    const servesEl = document.getElementById("serves");
-    const tagsEl = document.getElementById("tags");
-    const ingList = document.getElementById("ingredients");
-    const stepsEl = document.getElementById("steps");
-    const progressBar = document.getElementById("progress-bar");
-    const bookmarkBtn = document.getElementById("bookmark");
-    const speakBtn = document.getElementById("speak");
-    const nextBtn = document.getElementById("next-step");
-    const prevBtn = document.getElementById("prev-step");
-    const focusBtn = document.getElementById("focus");
-    const videoPanel = document.getElementById("video-panel");
-    const videoFrame = document.getElementById("video");
-
-    let bookmarks = new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]"));
-    let activeStep = 0;
-
-    function render() {
-      heroImg.src = recipe.image;
-      heroImg.alt = recipe.title;
-      titleEl.textContent = recipe.title;
-      blurbEl.textContent = recipe.blurb;
-      timeEl.textContent = recipe.time;
-      levelEl.textContent = recipe.level;
-      servesEl.textContent = "Serves " + recipe.serves;
-      tagsEl.innerHTML = recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join("");
-      bookmarkBtn.classList.toggle("active", bookmarks.has(id));
-
-      ingList.innerHTML = "";
-      recipe.ingredients.forEach((item, i) => {
-        const li = document.createElement("li");
-        li.className = "ing";
-        li.innerHTML = `<input type="checkbox" data-idx="${i}"> <span>${item}</span>`;
-        ingList.appendChild(li);
-      });
-
-      stepsEl.innerHTML = "";
-      recipe.steps.forEach((text, i) => {
-        const div = document.createElement("div");
-        div.className = "step" + (i === 0 ? " active" : "");
-        div.dataset.idx = i;
-        div.innerHTML = `
-          <header>
-            <strong>Step ${i + 1}</strong>
-            <button data-say="${i}">🔊</button>
-          </header>
-          <p>${text}</p>
-        `;
-        stepsEl.appendChild(div);
-      });
-
-      if (recipe.video) {
-        videoPanel.hidden = false;
-        videoFrame.src = recipe.video + "?rel=0";
-      } else {
-        videoPanel.hidden = true;
-      }
-      updateProgress();
-    }
-
-    function updateProgress() {
-      const total = recipe.steps.length;
-      const width = ((activeStep + 1) / total) * 100;
-      progressBar.style.width = width + "%";
-      stepsEl.querySelectorAll(".step").forEach((step, idx) => {
-        step.classList.toggle("active", idx === activeStep);
-      });
-    }
-
-    function speak(text) {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utter);
-    }
-
-    // Ingredient check-off
-    ingList.addEventListener("change", (e) => {
-      if (e.target.matches("input[type='checkbox']")) {
-        const li = e.target.closest(".ing");
-        li.classList.toggle("completed", e.target.checked);
-      }
-    });
-
-    // Step speech
-    stepsEl.addEventListener("click", (e) => {
-      if (e.target.dataset.say) {
-        const idx = Number(e.target.dataset.say);
-        speak(recipe.steps[idx]);
-        activeStep = idx;
-        updateProgress();
-      }
-    });
-
-    nextBtn.addEventListener("click", () => {
-      activeStep = Math.min(recipe.steps.length - 1, activeStep + 1);
-      updateProgress();
-      stepsEl.children[activeStep].scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-
-    prevBtn.addEventListener("click", () => {
-      activeStep = Math.max(0, activeStep - 1);
-      updateProgress();
-      stepsEl.children[activeStep].scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-
-    focusBtn.addEventListener("click", () => {
-      stepsEl.scrollIntoView({ behavior: "smooth" });
-      speak("Starting " + recipe.title + ". You have " + recipe.steps.length + " steps. " + recipe.steps[0]);
-      activeStep = 0;
-      updateProgress();
-    });
-
-    speakBtn.addEventListener("click", () => {
-      speak(recipe.title + ". Ingredients: " + recipe.ingredients.join(", ") + ". Steps: " + recipe.steps.join(". "));
-    });
-
-    bookmarkBtn.addEventListener("click", () => {
-      if (bookmarks.has(id)) bookmarks.delete(id); else bookmarks.add(id);
-      localStorage.setItem("bookmarks", JSON.stringify([...bookmarks]));
-      bookmarkBtn.classList.toggle("active", bookmarks.has(id));
-    });
-
-    render();
-  </script>
+    <p v-else style="padding:2rem;font-family:sans-serif;">Recipe not found. Go back to the shelf.</p>
+  </div>
 </body>
 </html>
