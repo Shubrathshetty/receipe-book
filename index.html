@@ -1,42 +1,427 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Recipe Book</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .recipe-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px; width: 300px; float: left; }
-        .recipe-card img { width: 100%; border-radius: 5px; }
-        .recipe-card h2 { color: #333; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Recipe Book - Flip Through & Cook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --primary: #e4572e;
+      --secondary: #f2a541;
+      --ink: #1f2933;
+      --paper: #fdf8ef;
+      --muted: #6b7280;
+      --accent: #2bbf6a;
+      --shadow: 0 18px 40px rgba(31,41,51,0.16);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 10% 20%, #ffe7c7 0%, #f6f0e6 30%, #e7ecf8 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 32px 18px 64px;
+    }
+
+    h1 {
+      font-family: "Playfair Display", "Times New Roman", serif;
+      font-size: clamp(2.4rem, 4vw, 3.2rem);
+      letter-spacing: -0.5px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 1rem;
+    }
+
+    .toolbar {
+      max-width: 1180px;
+      margin: 0 auto 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .toolbar .search {
+      position: relative;
+      width: 100%;
+    }
+
+    .search input {
+      width: 100%;
+      border: 1px solid #e4d7c7;
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px 14px 46px;
+      font-size: 1rem;
+      box-shadow: var(--shadow);
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+
+    .search input:focus {
+      outline: none;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.12);
+    }
+
+    .search svg {
+      width: 20px;
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 4px 2px 6px;
+      scrollbar-width: thin;
+    }
+
+    .chip {
+      border: 1px solid #e4d7c7;
+      background: #fff7ea;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 8px 20px rgba(228,87,46,0.28);
+    }
+
+    .shelf {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      perspective: 1200px;
+    }
+
+    .card {
+      position: relative;
+      background: #fffaf1;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: box-shadow 160ms ease;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.03) 100%);
+      pointer-events: none;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow);
+      transform: none;
+    }
+
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      transform: none;
+      transition: none;
+    }
+
+    .card-body {
+      padding: 16px 18px 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+      font-family: "Playfair Display", serif;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.93rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      background: #edf0ff;
+      color: #2f3b8f;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      border: 1px solid #dce1ff;
+    }
+
+    .tag.veggie { background: #e8fff2; color: #1b7a3f; border-color: #d3f5e1; }
+    .tag.quick { background: #fff4e6; color: #9f4a0b; border-color: #ffe3c4; }
+    .tag.sweet { background: #fff0f5; color: #b33f6c; border-color: #ffd6e8; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      gap: 10px;
+    }
+
+    .button {
+      background: linear-gradient(135deg, var(--primary), #f68b3c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      box-shadow: 0 12px 24px rgba(228,87,46,0.22);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .button:hover { transform: translateY(-2px); box-shadow: 0 16px 28px rgba(228,87,46,0.28); }
+    .button.secondary {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid #e4d7c7;
+      box-shadow: none;
+    }
+
+    .bookmark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid #e4d7c7;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .bookmark.active {
+      background: #ffe4d9;
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 8px 18px rgba(228,87,46,0.24);
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 0;
+      font-size: 1.05rem;
+    }
+
+    .peek {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      width: min(420px, 92vw);
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+      padding: 18px 18px 16px;
+      transform: translateY(140%);
+      transition: transform 240ms ease;
+      z-index: 20;
+    }
+
+    .peek.visible { transform: translateY(0); }
+
+    .peek header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .peek h3 { font-family: "Playfair Display", serif; }
+    .peek ul { margin-left: 18px; color: var(--muted); margin-bottom: 10px; }
+    .peek footer { display: flex; gap: 10px; }
+
+    @media (max-width: 720px) {
+      .toolbar { gap: 10px; }
+      .filters { justify-content: flex-start; }
+      .card img { height: 160px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>My Collaborative Recipe Book</h1>
-    <div class="recipe-card">
-        <h2>Pancakes</h2>
-        <img src="https://via.placeholder.com/300x200?text=Pancakes" alt="Pancakes">
-        <p>Ingredients: Flour, eggs, milk.</p>
-        <p>Steps: Mix and cook.</p>
-    </div>
-    <div class="recipe-card">
-        <h2>Salad</h2>
-        <img src="https://via.placeholder.com/300x200?text=Salad" alt="Salad">
-        <p>Ingredients: Lettuce, tomatoes, dressing.</p>
-        <p>Steps: Chop and mix.</p>
-    </div>
-    <!-- Add more cards here -->
-     <div class="recipe-card">
-<<<<<<< HEAD
-    <h2>Chocolate Chip Cookies</h2>
-    <img src="https://thumbs.dreamstime.com/b/close-up-delicious-chocolate-chip-cookies-black-plate-tasty-homemade-wooden-table-dessert-checkered-tablecloth-copy-space-120167052.jpg" alt="Chocolate Chip Cookies">
-    <p>Ingredients: Flour, butter, brown sugar, eggs, chocolate chips, vanilla.</p>
-    <p>Steps: Cream butter and sugar, add eggs and vanilla, mix in dry ingredients and chips, bake at 180°C for 10-12 minutes.</p>
-=======
-    <h2>Pasta</h2>
-    <img src="https://via.placeholder.com/300x200?text=Pasta" alt="Pasta">
-    <p>Ingredients: Pasta, sauce, cheese.</p>
-    <p>Steps: Boil and serve.</p>
->>>>>>> add-pasta-recipe
-</div>
+  <div id="app">
+    <h1>My Recipe Book</h1>
+    <p class="tagline">Flip through pages, search by craving, and jump into any recipe instantly.</p>
+
+    <section class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <input v-model="query" type="search" placeholder="Search by name, ingredient, or tag...">
+      </div>
+      <div class="filters">
+        <button
+          v-for="tag in chips"
+          :key="tag"
+          class="chip"
+          :class="{active: activeTags.has(tag.toLowerCase())}"
+          @click="toggleTag(tag.toLowerCase())"
+        >{{ tag }}</button>
+      </div>
+    </section>
+
+    <section class="shelf">
+      <article
+        v-for="r in filtered"
+        :key="r.id"
+        class="card"
+        @click="openRecipe(r.id)"
+      >
+        <img :src="r.image" :alt="r.title">
+        <div class="card-body">
+          <h2>{{ r.title }}</h2>
+          <p class="meta">{{ r.time }} • {{ r.level }} • Serves {{ r.serves }}</p>
+          <p style="color:var(--muted); margin-bottom:10px;">{{ r.blurb }}</p>
+          <div class="tags">
+            <span
+              v-for="tag in r.tags"
+              :key="tag"
+              class="tag"
+              :class="tagClass(tag)"
+            >{{ tag }}</span>
+          </div>
+          <div class="actions">
+            <button class="button secondary" @click.stop="peek(r)">Peek</button>
+            <button class="button" @click.stop="openRecipe(r.id)">Open</button>
+            <button
+              class="bookmark"
+              :class="{active: bookmarks.has(r.id)}"
+              @click.stop="toggleBookmark(r.id)"
+              aria-label="Save recipe"
+            >♡</button>
+          </div>
+        </div>
+      </article>
+    </section>
+    <div class="empty" v-if="filtered.length === 0">No recipes match that search. Try clearing a filter.</div>
+
+    <aside class="peek" :class="{visible: !!peekItem}">
+      <header v-if="peekItem">
+        <div>
+          <p style="color:var(--muted); font-size:0.9rem">Quick peek</p>
+          <h3>{{ peekItem.title }}</h3>
+        </div>
+        <button class="bookmark" :class="{active: bookmarks.has(peekItem.id)}" @click="toggleBookmark(peekItem.id)" aria-label="Save recipe">♡</button>
+      </header>
+      <template v-if="peekItem">
+        <p class="meta">{{ peekItem.time }} • {{ peekItem.level }} • Serves {{ peekItem.serves }}</p>
+        <strong>Key ingredients</strong>
+        <ul>
+          <li v-for="ing in peekItem.ingredients.slice(0,4)" :key="ing">{{ ing }}</li>
+        </ul>
+        <footer>
+          <button class="button secondary" @click="peekItem=null">Close</button>
+          <button class="button" @click="openRecipe(peekItem.id)">Open recipe</button>
+        </footer>
+      </template>
+    </aside>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const { createApp, reactive, computed, onMounted } = Vue;
+    createApp({
+      setup() {
+        const state = reactive({
+          recipes: window.RECIPES || [],
+          query: "",
+          activeTags: new Set(),
+          bookmarks: new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]")),
+          peekItem: null,
+          chips: ["Quick", "Veggie", "Comfort", "Sweet", "Weeknight"]
+        });
+
+        const filtered = computed(() => {
+          const text = state.query.trim().toLowerCase();
+          return state.recipes.filter(r => {
+            const matchesText =
+              r.title.toLowerCase().includes(text) ||
+              r.blurb.toLowerCase().includes(text) ||
+              r.tags.some(t => t.toLowerCase().includes(text)) ||
+              r.ingredients.some(i => i.toLowerCase().includes(text));
+            const matchesTag = state.activeTags.size === 0 || r.tags.some(t => state.activeTags.has(t.toLowerCase()));
+            return matchesText && matchesTag;
+          });
+        });
+
+        const saveBookmarks = () => {
+          localStorage.setItem("bookmarks", JSON.stringify([...state.bookmarks]));
+        };
+
+        const toggleTag = (tag) => {
+          if (state.activeTags.has(tag)) state.activeTags.delete(tag);
+          else state.activeTags.add(tag);
+        };
+
+        const tagClass = (t) => t === "veggie" ? "veggie" : t === "quick" ? "quick" : t === "sweet" ? "sweet" : "";
+
+        const openRecipe = (id) => {
+          localStorage.setItem("lastRecipe", id);
+          window.location.href = "recipe.html?recipe=" + encodeURIComponent(id);
+        };
+
+        const peek = (recipe) => { state.peekItem = recipe; };
+
+        const toggleBookmark = (id) => {
+          if (state.bookmarks.has(id)) state.bookmarks.delete(id);
+          else state.bookmarks.add(id);
+          saveBookmarks();
+        };
+
+        onMounted(() => {
+          const last = localStorage.getItem("lastRecipe");
+          if (!state.query && last) state.query = "";
+        });
+
+        return { ...Vue.toRefs(state), filtered, toggleTag, tagClass, openRecipe, peek, toggleBookmark };
+      }
+    }).mount("#app");
+  </script>
 </body>
 </html>

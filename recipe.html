@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recipe Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --primary: #e4572e;
+      --secondary: #f2a541;
+      --ink: #1f2933;
+      --paper: #fffaf4;
+      --muted: #6b7280;
+      --edge: #e6d8c9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at 10% 10%, #ffe3c2 0%, #f6f0e6 35%, #e8eef9 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 22px 16px 80px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .topbar {
+      max-width: 1180px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: space-between;
+    }
+    .topbar button, .topbar a {
+      background: #fff;
+      border: 1px solid var(--edge);
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+    .topbar button:hover, .topbar a:hover { transform: translateY(-2px); }
+
+    .hero {
+      max-width: 1180px;
+      margin: 0 auto 18px;
+      background: var(--paper);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 22px 60px rgba(0,0,0,0.18);
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      min-height: 320px;
+    }
+
+    .hero .image {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero .image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.04);
+    }
+    .hero .image::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 60%);
+    }
+
+    .hero .content {
+      padding: 28px;
+      position: relative;
+      background: linear-gradient(145deg, #fffaf4 0%, #fff1e4 40%, #fffaf4 100%);
+    }
+    .hero h1 {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      margin-bottom: 8px;
+    }
+    .hero p.blurb {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .badges {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .badge {
+      background: #fff;
+      border: 1px solid var(--edge);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+    .hero .cta {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .cta .button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .button.primary {
+      background: linear-gradient(135deg, var(--primary), #f68b3c);
+      color: white;
+      box-shadow: 0 16px 32px rgba(228,87,46,0.26);
+    }
+    .button.secondary {
+      background: white;
+      border: 1px solid var(--edge);
+    }
+    .button:hover { transform: translateY(-2px); }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: var(--paper);
+      border-radius: 22px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      position: relative;
+    }
+
+    .spine {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 6px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0));
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    h2 {
+      font-family: "Playfair Display", serif;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--edge);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+    }
+
+    ul.ingredients {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .ing {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: var(--ink);
+    }
+    .ing input { margin-top: 3px; }
+    .ing.completed { color: var(--muted); text-decoration: line-through; }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+    }
+    .step {
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+      background: #fffdf8;
+    }
+    .step header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .step button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .step.active {
+      border-color: var(--primary);
+      box-shadow: 0 14px 24px rgba(228,87,46,0.14);
+    }
+    .progress {
+      margin-top: 12px;
+      width: 100%;
+      height: 10px;
+      background: #f0e5d9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary), #f68b3c);
+      width: 0;
+      transition: width 200ms ease;
+    }
+
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      padding: 6px 10px;
+      background: #fff0e6;
+      color: #a04c15;
+      border-radius: 12px;
+      border: 1px solid #ffd8b4;
+      font-size: 0.9rem;
+    }
+
+    .video {
+      margin-top: 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--edge);
+      aspect-ratio: 16 / 9;
+      background: #111;
+    }
+
+    @media (max-width: 940px) {
+      .hero { grid-template-columns: 1fr; }
+      .page { grid-template-columns: 1fr; }
+      .spine { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← Back to shelf</a>
+    <button id="bookmark">♡ Save</button>
+  </div>
+
+  <section class="hero">
+    <div class="image"><img id="hero-img" alt=""></div>
+    <div class="content">
+      <h1 id="title"></h1>
+      <p class="blurb" id="blurb"></p>
+      <div class="badges">
+        <span class="badge">⏱ <span id="time"></span></span>
+        <span class="badge">🎚 <span id="level"></span></span>
+        <span class="badge">🍽 <span id="serves"></span></span>
+      </div>
+      <div class="tags" id="tags"></div>
+      <div class="cta">
+        <button class="button primary" id="focus">Start cooking</button>
+        <button class="button secondary" id="speak">Read aloud</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="spine"></div>
+    <div class="panel">
+      <h2>Ingredients</h2>
+      <ul class="ingredients" id="ingredients"></ul>
+    </div>
+    <div>
+      <div class="panel">
+        <h2>Steps</h2>
+        <div class="steps" id="steps"></div>
+        <div class="progress"><span id="progress-bar"></span></div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button class="button secondary" id="prev-step">Previous</button>
+          <button class="button primary" id="next-step">Next step</button>
+        </div>
+      </div>
+      <div class="panel" id="video-panel" hidden>
+        <h2>Watch it</h2>
+        <div class="video">
+          <iframe id="video" width="100%" height="100%" src="" title="YouTube video player" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="data.js"></script>
+  <script>
+    const recipeList = window.RECIPES || [];
+    const recipeMap = Object.fromEntries(recipeList.map(r => [r.id, r]));
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get("recipe");
+    const fallback = localStorage.getItem("lastRecipe");
+    const id = recipeMap[fromQuery] ? fromQuery : (recipeMap[fallback] ? fallback : recipeList[0]?.id);
+    const recipe = recipeMap[id];
+    if (recipe && id) {
+      localStorage.setItem("lastRecipe", id);
+    } else {
+      document.body.innerHTML = "<p style='padding:2rem;font-family:sans-serif;'>Recipe not found. Go back to the shelf.</p>";
+      throw new Error("Recipe not found");
+    }
+
+    const heroImg = document.getElementById("hero-img");
+    const titleEl = document.getElementById("title");
+    const blurbEl = document.getElementById("blurb");
+    const timeEl = document.getElementById("time");
+    const levelEl = document.getElementById("level");
+    const servesEl = document.getElementById("serves");
+    const tagsEl = document.getElementById("tags");
+    const ingList = document.getElementById("ingredients");
+    const stepsEl = document.getElementById("steps");
+    const progressBar = document.getElementById("progress-bar");
+    const bookmarkBtn = document.getElementById("bookmark");
+    const speakBtn = document.getElementById("speak");
+    const nextBtn = document.getElementById("next-step");
+    const prevBtn = document.getElementById("prev-step");
+    const focusBtn = document.getElementById("focus");
+    const videoPanel = document.getElementById("video-panel");
+    const videoFrame = document.getElementById("video");
+
+    let bookmarks = new Set(JSON.parse(localStorage.getItem("bookmarks") || "[]"));
+    let activeStep = 0;
+
+    function render() {
+      heroImg.src = recipe.image;
+      heroImg.alt = recipe.title;
+      titleEl.textContent = recipe.title;
+      blurbEl.textContent = recipe.blurb;
+      timeEl.textContent = recipe.time;
+      levelEl.textContent = recipe.level;
+      servesEl.textContent = "Serves " + recipe.serves;
+      tagsEl.innerHTML = recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join("");
+      bookmarkBtn.classList.toggle("active", bookmarks.has(id));
+
+      ingList.innerHTML = "";
+      recipe.ingredients.forEach((item, i) => {
+        const li = document.createElement("li");
+        li.className = "ing";
+        li.innerHTML = `<input type="checkbox" data-idx="${i}"> <span>${item}</span>`;
+        ingList.appendChild(li);
+      });
+
+      stepsEl.innerHTML = "";
+      recipe.steps.forEach((text, i) => {
+        const div = document.createElement("div");
+        div.className = "step" + (i === 0 ? " active" : "");
+        div.dataset.idx = i;
+        div.innerHTML = `
+          <header>
+            <strong>Step ${i + 1}</strong>
+            <button data-say="${i}">🔊</button>
+          </header>
+          <p>${text}</p>
+        `;
+        stepsEl.appendChild(div);
+      });
+
+      if (recipe.video) {
+        videoPanel.hidden = false;
+        videoFrame.src = recipe.video + "?rel=0";
+      } else {
+        videoPanel.hidden = true;
+      }
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const total = recipe.steps.length;
+      const width = ((activeStep + 1) / total) * 100;
+      progressBar.style.width = width + "%";
+      stepsEl.querySelectorAll(".step").forEach((step, idx) => {
+        step.classList.toggle("active", idx === activeStep);
+      });
+    }
+
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    // Ingredient check-off
+    ingList.addEventListener("change", (e) => {
+      if (e.target.matches("input[type='checkbox']")) {
+        const li = e.target.closest(".ing");
+        li.classList.toggle("completed", e.target.checked);
+      }
+    });
+
+    // Step speech
+    stepsEl.addEventListener("click", (e) => {
+      if (e.target.dataset.say) {
+        const idx = Number(e.target.dataset.say);
+        speak(recipe.steps[idx]);
+        activeStep = idx;
+        updateProgress();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      activeStep = Math.min(recipe.steps.length - 1, activeStep + 1);
+      updateProgress();
+      stepsEl.children[activeStep].scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    prevBtn.addEventListener("click", () => {
+      activeStep = Math.max(0, activeStep - 1);
+      updateProgress();
+      stepsEl.children[activeStep].scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    focusBtn.addEventListener("click", () => {
+      stepsEl.scrollIntoView({ behavior: "smooth" });
+      speak("Starting " + recipe.title + ". You have " + recipe.steps.length + " steps. " + recipe.steps[0]);
+      activeStep = 0;
+      updateProgress();
+    });
+
+    speakBtn.addEventListener("click", () => {
+      speak(recipe.title + ". Ingredients: " + recipe.ingredients.join(", ") + ". Steps: " + recipe.steps.join(". "));
+    });
+
+    bookmarkBtn.addEventListener("click", () => {
+      if (bookmarks.has(id)) bookmarks.delete(id); else bookmarks.add(id);
+      localStorage.setItem("bookmarks", JSON.stringify([...bookmarks]));
+      bookmarkBtn.classList.toggle("active", bookmarks.has(id));
+    });
+
+    render();
+  </script>
+</body>
+</html>
