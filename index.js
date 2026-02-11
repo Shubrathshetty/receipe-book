@@ -1,8 +1,10 @@
 import { createApp, reactive, computed, toRefs } from "vue";
 import { RECIPES } from "./data.js";
 
+// Text-on-gradient fallback with bolder styling to fill the frame nicely.
 const fallbackImg = (title = "Recipe") => {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='900' height='650'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop stop-color='%23f6d365'/><stop offset='1' stop-color='%23fda085'/></linearGradient></defs><rect width='900' height='650' fill='url(%23g)'/><text x='50%' y='52%' font-family='Segoe UI, sans-serif' font-size='42' fill='%231f2933' text-anchor='middle'>${title.replace(/</g,"&lt;").slice(0,20)}</text></svg>`;
+  const safe = (title || "Recipe").replace(/</g, "&lt;").slice(0, 28);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='900' height='650'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop stop-color='%23ff9a9e'/><stop offset='1' stop-color='%23fad0c4'/></linearGradient></defs><rect width='900' height='650' fill='url(%23g)'/><text x='50%' y='54%' font-family='\"Poppins\", \"Segoe UI\", sans-serif' font-size='52' font-weight='700' letter-spacing='1' fill='%23171717' text-anchor='middle' dominant-baseline='middle'>${safe}</text><text x='50%' y='72%' font-family='\"Poppins\", \"Segoe UI\", sans-serif' font-size='18' fill='%23333333' text-anchor='middle' opacity='0.65'>chef-crafted flavor</text></svg>`;
   return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 };
 
@@ -59,7 +61,8 @@ createApp({
 
     const imgError = (e, title) => {
       e.target.onerror = null;
-      e.target.src = fallbackImg(title);
+      // Retry with a fresh, food-themed photo for that recipe.
+      e.target.src = fallbackImg(title || "recipe");
     };
 
     return { ...toRefs(state), filtered, saved, toggleTag, tagClass, openRecipe, peek, toggleBookmark, imgError };

@@ -5,8 +5,14 @@ const slug = (title) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const imgFor = (query, id) =>
-  `https://images.unsplash.com/seed/${encodeURIComponent(id || query)}/900x650?auto=format&fit=crop&w=1200&q=80&${Date.now().toString().slice(-5)}`;
+// Deterministic, cuisine-relevant photo via Unsplash source endpoint (no API key).
+// The "sig" query keeps each recipe stable while matching keywords.
+const imgFor = (query, id, extra = "") => {
+  const keywords = [query, extra, "food", "dish"].filter(Boolean).join(",");
+  const kw = encodeURIComponent(keywords || "food");
+  const sig = (id || query || "recipe").split("").reduce((n, c) => (n + c.charCodeAt(0)) % 100000, 0);
+  return `https://source.unsplash.com/1200x900/?${kw}&sig=${sig}`;
+};
 
 // Build a YouTube search-based embed for each recipe
 const videoFor = (title) =>
@@ -22,7 +28,14 @@ function addRecipe(entry) {
     serves: entry.serves,
     tags: entry.tags,
     blurb: entry.blurb,
-    image: entry.image || imgFor(entry.query || entry.title, id),
+    image: entry.image || imgFor(
+      entry.query || entry.title,
+      id,
+      [
+        (entry.tags || []).slice(0, 2).join(" "),
+        entry.ingredients?.[0]
+      ].filter(Boolean).join(" ")
+    ),
     ingredients: entry.ingredients,
     steps: entry.steps,
     video: entry.video || videoFor(entry.query || entry.title)
