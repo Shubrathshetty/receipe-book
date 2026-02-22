@@ -5,13 +5,77 @@ const slug = (title) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-// Deterministic, cuisine-relevant photo via Unsplash source endpoint (no API key).
-// The "sig" query keeps each recipe stable while matching keywords.
+// Food-specific images from Unsplash with direct photo IDs for reliable, high-quality food photography
+const foodImages = {
+  // Breakfast & Pancakes
+  "pancakes": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&h=900&fit=crop",
+  "breakfast": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=1200&h=900&fit=crop",
+  
+  // Salads
+  "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&h=900&fit=crop",
+  "garden salad": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200&h=900&fit=crop",
+  
+  // Pasta
+  "pasta": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200&h=900&fit=crop",
+  "tomato pasta": "https://images.unsplash.com/photo-1598866594230-a7c12756260f?w=1200&h=900&fit=crop",
+  
+  // Cookies & Desserts
+  "cookies": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=1200&h=900&fit=crop",
+  "chocolate": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1200&h=900&fit=crop",
+  "brownies": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=1200&h=900&fit=crop",
+  "cheesecake": "https://images.unsplash.com/photo-1524351199678-941a58a3df50?w=1200&h=900&fit=crop",
+  
+  // Seafood
+  "salmon": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=1200&h=900&fit=crop",
+  "fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=1200&h=900&fit=crop",
+  "shrimp": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=1200&h=900&fit=crop",
+  
+  // Rice & Risotto
+  "risotto": "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=1200&h=900&fit=crop",
+  "rice": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1200&h=900&fit=crop",
+  
+  // Tacos & Mexican
+  "tacos": "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=1200&h=900&fit=crop",
+  "beef": "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=900&fit=crop",
+  
+  // Pies
+  "pie": "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?w=1200&h=900&fit=crop",
+  "apple pie": "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?w=1200&h=900&fit=crop",
+  
+  // Stir Fry & Asian
+  "stir fry": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1200&h=900&fit=crop",
+  "curry": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=1200&h=900&fit=crop",
+  "chicken": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=1200&h=900&fit=crop",
+  
+  // Bowls
+  "bowl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&h=900&fit=crop",
+  "buddha bowl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&h=900&fit=crop",
+  
+  // Comfort food
+  "mac and cheese": "https://images.unsplash.com/photo-1543339494-b4cd4f7ba686?w=1200&h=900&fit=crop",
+  "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=900&fit=crop",
+  "burger": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&h=900&fit=crop",
+  
+  // Default fallback
+  "default": "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=900&fit=crop"
+};
+
 const imgFor = (query, id, extra = "") => {
-  const keywords = [query, extra, "food", "dish"].filter(Boolean).join(",");
-  const kw = encodeURIComponent(keywords || "food");
-  const sig = (id || query || "recipe").split("").reduce((n, c) => (n + c.charCodeAt(0)) % 100000, 0);
-  return `https://source.unsplash.com/1200x900/?${kw}&sig=${sig}`;
+  const q = (query || "").toLowerCase();
+  
+  // Find matching image based on keywords in the query
+  for (const [key, url] of Object.entries(foodImages)) {
+    if (q.includes(key)) return url;
+  }
+  
+  // Check extra keywords
+  const e = (extra || "").toLowerCase();
+  for (const [key, url] of Object.entries(foodImages)) {
+    if (e.includes(key)) return url;
+  }
+  
+  // Return default food image
+  return foodImages.default;
 };
 
 // Build a YouTube search-based embed for each recipe
