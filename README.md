@@ -1,4 +1,4 @@
-# Recipe Book 
+# RECIPE BOOK
 
 A lightweight, multi-page recipe browser built with Vite and Vue 3. It ships with 150+ preloaded recipes, rich filtering/search, saved (bookmarked) lists, and guided detail pages with ingredients, step tracking, speech, and quick YouTube lookups.
 
