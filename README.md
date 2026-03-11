@@ -19,7 +19,7 @@ npm run build
 npm run preview
 ```
 
-## What I practiced / learned
+## What I gained in the process
 - Getting comfortable with **Git pulls and resolving merge conflicts** while iterating rapidly on a front-end project.
 - Setting up a **Vite multi-page** build (custom rollup inputs) and handling base paths for navigation.
 - Using **Vue 3 (composition API)** without a heavy router for a small multi-page flow.
