@@ -39,6 +39,3 @@ npm run preview
 - Replace the favicon by dropping your icon into `public/favicon.ico`.
 - If you want fixed tutorial videos per recipe, add a `video` field in `data.js`; otherwise the YouTube search link is generated from the title.
 
-## Deployment
-`npm run build` produces static assets in `dist/`. Serve that folder on any static host (Netlify, Vercel, GitHub Pages). The config already includes both entry points.
-
